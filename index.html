@@ -1,0 +1,1472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sun and Moon Puzzle</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --cell-size: 60px;
+            --constraint-size: 24px;
+            --primary-color: #4361ee;
+            --secondary-color: #3f37c9;
+            --accent-color: #f72585;
+            --success-color: #4cc9f0;
+            --warning-color: #f77f00;
+            --error-color: #e63946;
+            --dark-bg: #0f172a;
+            --light-bg: #f8f9fa;
+            --cell-bg: #ffffff;
+            --revealed-bg: #eff6ff;
+            --panel-bg: rgba(255, 255, 255, 0.95);
+            --shadow-sm: 0 2px 5px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 4px 10px rgba(0, 0, 0, 0.12);
+            --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.15);
+            --transition-normal: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-bounce: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            --rounded-sm: 4px;
+            --rounded-md: 8px;
+            --rounded-lg: 16px;
+            --border-light: 1px solid rgba(0, 0, 0, 0.1);
+            --font-heading: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            --font-body: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background: linear-gradient(135deg, #b5c6ff 0%, #fafafa 100%);
+            background-attachment: fixed;
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .game-wrapper {
+            max-width: 1000px;
+            width: 100%;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            background: var(--panel-bg);
+            width: 100%;
+            padding: 20px;
+            border-radius: var(--rounded-lg);
+            box-shadow: var(--shadow-md);
+        }
+
+        .title {
+            color: var(--primary-color);
+            font-family: var(--font-heading);
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+
+        .game-container {
+            display: flex;
+            gap: 20px;
+            width: 100%;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .game-board {
+            flex: 1;
+            min-width: 300px;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: var(--panel-bg);
+            border-radius: var(--rounded-lg);
+            box-shadow: var(--shadow-md);
+            padding: 20px;
+        }
+
+        .side-panel {
+            flex: 0 1 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            border-radius: var(--rounded-lg);
+            padding: 20px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .panel-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .panel-title i {
+            font-size: 1.1em;
+        }
+
+        .instructions ul {
+            padding-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .instructions li {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+
+        .instructions li:last-child {
+            margin-bottom: 0;
+        }
+
+        .stats-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.95rem;
+        }
+
+        .stat-value {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        #timer {
+            font-family: monospace;
+            font-size: 1.1rem;
+        }
+
+        .legend {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+        }
+
+        #grid {
+            display: grid;
+            gap: 0;
+            justify-content: center;
+            margin: 20px auto;
+            width: fit-content;
+            box-shadow: var(--shadow-lg);
+            border-radius: var(--rounded-md);
+            overflow: hidden;
+            border: var(--border-light);
+            background: var(--cell-bg);
+        }
+
+        .grid-cell {
+            width: var(--cell-size);
+            height: var(--cell-size);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            font-size: 28px;
+            transition: var(--transition-normal);
+            background-color: var(--cell-bg);
+            position: relative;
+        }
+
+        .grid-cell::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(67, 97, 238, 0);
+            transition: var(--transition-normal);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .interactive {
+            cursor: pointer;
+        }
+
+        .interactive:hover {
+            transform: scale(1.05);
+            z-index: 2;
+            box-shadow: 0 0 15px rgba(67, 97, 238, 0.4);
+        }
+
+        .interactive:hover::after {
+            background: rgba(67, 97, 238, 0.1);
+        }
+
+        .interactive:active {
+            transform: scale(0.95);
+        }
+
+        .revealed {
+            background-color: var(--revealed-bg);
+            font-weight: bold;
+        }
+
+        .constraint {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: bold;
+            background-color: #f0f0f0;
+            color: #555;
+            transition: var(--transition-bounce);
+            border-radius: 4px;
+        }
+
+        .horizontal-constraint {
+            width: var(--constraint-size);
+            height: var(--cell-size);
+        }
+
+        .vertical-constraint {
+            width: var(--cell-size);
+            height: var(--constraint-size);
+        }
+
+        .satisfied {
+            background-color: var(--success-color);
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .violated {
+            background-color: var(--error-color);
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        button {
+            padding: 12px 20px;
+            font-size: 1rem;
+            border: none;
+            border-radius: var(--rounded-md);
+            cursor: pointer;
+            transition: var(--transition-normal);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            box-shadow: var(--shadow-sm);
+        }
+
+        button i {
+            font-size: 1.1em;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-primary:active {
+            transform: translateY(1px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-secondary {
+            background-color: white;
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--primary-color);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-secondary:active {
+            transform: translateY(1px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-warning {
+            background-color: var(--warning-color);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background-color: #e67700;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-warning:active {
+            transform: translateY(1px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .status {
+            margin-top: 15px;
+            padding: 12px 20px;
+            border-radius: var(--rounded-md);
+            text-align: center;
+            transition: var(--transition-bounce);
+            opacity: 0;
+            transform: translateY(10px);
+            max-height: 0;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .status.active {
+            opacity: 1;
+            transform: translateY(0);
+            max-height: 200px;
+            margin-bottom: 15px;
+        }
+
+        .status.success {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .status.error {
+            background-color: var(--error-color);
+            color: white;
+        }
+
+        .status.info {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: var(--transition-normal);
+        }
+
+        .modal.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: var(--rounded-lg);
+            max-width: 90%;
+            width: 500px;
+            box-shadow: var(--shadow-lg);
+            transform: translateY(20px);
+            transition: var(--transition-bounce);
+        }
+
+        .modal.active .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal-title {
+            font-size: 1.8rem;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .modal-body {
+            margin-bottom: 25px;
+            line-height: 1.6;
+            text-align: center;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .sun-animation {
+            animation: sun-pulse 2s infinite;
+        }
+
+        .moon-animation {
+            animation: moon-pulse 2s infinite;
+        }
+
+        @keyframes sun-pulse {
+            0% { transform: scale(1); text-shadow: 0 0 5px rgba(255, 204, 0, 0.5); }
+            50% { transform: scale(1.2); text-shadow: 0 0 20px rgba(255, 204, 0, 0.8); }
+            100% { transform: scale(1); text-shadow: 0 0 5px rgba(255, 204, 0, 0.5); }
+        }
+
+        @keyframes moon-pulse {
+            0% { transform: scale(1); text-shadow: 0 0 5px rgba(173, 216, 230, 0.5); }
+            50% { transform: scale(1.2); text-shadow: 0 0 20px rgba(173, 216, 230, 0.8); }
+            100% { transform: scale(1); text-shadow: 0 0 5px rgba(173, 216, 230, 0.5); }
+        }
+
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background-color: var(--primary-color);
+            opacity: 0;
+            z-index: 999;
+            pointer-events: none;
+        }
+
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 10;
+            max-width: 200px;
+            text-align: center;
+        }
+
+        .mode-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: var(--panel-bg);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: var(--shadow-md);
+            transition: var(--transition-normal);
+        }
+
+        .mode-toggle:hover {
+            transform: rotate(30deg);
+        }
+
+        .dark-mode {
+            --cell-bg: #1e293b;
+            --revealed-bg: #334155;
+            --panel-bg: rgba(30, 41, 59, 0.95);
+            --shadow-sm: 0 2px 5px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 4px 10px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.5);
+            color: #e2e8f0;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        }
+
+        .dark-mode .title {
+            background: linear-gradient(90deg, #4cc9f0, #f72585);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .dark-mode .subtitle {
+            color: #94a3b8;
+        }
+
+        .dark-mode .grid-cell {
+            border-color: rgba(255, 255, 255, 0.1);
+            color: #e2e8f0;
+        }
+
+        .dark-mode .constraint {
+            background-color: #334155;
+            color: #94a3b8;
+        }
+
+        .dark-mode .stat-item {
+            color: #e2e8f0;
+        }
+
+        .dark-mode .btn-secondary {
+            background-color: #334155;
+            color: #4cc9f0;
+            border-color: #4cc9f0;
+        }
+
+        .dark-mode .btn-secondary:hover {
+            background-color: #4cc9f0;
+            color: #0f172a;
+        }
+
+        @media (max-width: 768px) {
+            :root {
+                --cell-size: 48px;
+                --constraint-size: 20px;
+            }
+
+            .title {
+                font-size: 2rem;
+            }
+
+            .game-container {
+                flex-direction: column;
+            }
+
+            .game-board {
+                width: 100%;
+            }
+
+            .side-panel {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            :root {
+                --cell-size: 40px;
+                --constraint-size: 16px;
+            }
+
+            body {
+                padding: 10px;
+            }
+
+            .title {
+                font-size: 1.8rem;
+            }
+
+            .controls {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            button {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .header {
+                padding: 15px;
+            }
+
+            .panel {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="mode-toggle" onclick="toggleDarkMode()">
+        <i class="fas fa-moon"></i>
+    </div>
+
+    <div class="game-wrapper">
+        <header class="header">
+            <h1 class="title">Sun and Moon Puzzle</h1>
+            <p class="subtitle">Balance the cosmic forces in this logic game</p>
+        </header>
+
+        <div class="game-container">
+            <div class="game-board">
+                <div id="grid"></div>
+                
+                <div class="controls">
+                    <button id="check-btn" class="btn-primary" onclick="checkSolution(true)">
+                        <i class="fas fa-check-circle"></i> Check Solution
+                    </button>
+                    <button id="hint-btn" class="btn-secondary" onclick="showHint()">
+                        <i class="fas fa-lightbulb"></i> Get Hint
+                    </button>
+                    <button id="reset-btn" class="btn-warning" onclick="confirmReset()">
+                        <i class="fas fa-redo"></i> Reset
+                    </button>
+                </div>
+                
+                <div id="status-msg" class="status"></div>
+            </div>
+            
+            <div class="side-panel">
+                <div class="panel instructions">
+                    <h2 class="panel-title"><i class="fas fa-book"></i> How to Play</h2>
+                    <ul>
+                        <li>Fill the grid with suns (☀️) and moons (🌙).</li>
+                        <li>Each row and column must contain exactly 3 suns and 3 moons.</li>
+                        <li>No more than two identical symbols can be adjacent in a row or column.</li>
+                        <li>The constraints between cells must be satisfied:
+                            <ul>
+                                <li><strong>=</strong> means the symbols must be the same</li>
+                                <li><strong>×</strong> means the symbols must be different</li>
+                            </ul>
+                        </li>
+                        <li>Click on a cell to cycle through empty → sun → moon.</li>
+                    </ul>
+                </div>
+                
+                <div class="panel">
+                    <h2 class="panel-title"><i class="fas fa-chart-line"></i> Stats</h2>
+                    <div class="stats-container">
+                        <div class="stat-item">
+                            <span>Time:</span>
+                            <span id="timer" class="stat-value">00:00</span>
+                        </div>
+                        <div class="stat-item">
+                            <span>Moves:</span>
+                            <span id="moves-counter" class="stat-value">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span>Hints used:</span>
+                            <span id="hints-counter" class="stat-value">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span>Cells filled:</span>
+                            <span id="progress-counter" class="stat-value">0/36</span>
+                        </div>
+                    </div>
+                    
+                    <h3 class="panel-title" style="margin-top: 15px; font-size: 1rem;"><i class="fas fa-palette"></i> Legend</h3>
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: white; border: 1px solid rgba(0,0,0,0.1)"></div>
+                            <span>Editable</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: var(--revealed-bg); border: 1px solid rgba(0,0,0,0.1)"></div>
+                            <span>Fixed</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: var(--success-color)"></div>
+                            <span>Satisfied</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: var(--error-color)"></div>
+                            <span>Violated</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="reset-modal" class="modal">
+        <div class="modal-content">
+            <h2 class="modal-title">Reset Puzzle?</h2>
+            <div class="modal-body">
+                Are you sure you want to reset the puzzle? All your progress will be lost.
+            </div>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="closeModal('reset-modal')">Cancel</button>
+                <button class="btn-warning" onclick="resetPuzzle(true)">Reset</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="win-modal" class="modal">
+        <div class="modal-content">
+            <h2 class="modal-title">🎉 Congratulations! 🎉</h2>
+            <div class="modal-body">
+                <p>You've solved the puzzle!</p>
+                <div id="win-stats"></div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-primary" onclick="resetPuzzle(true)">Play Again</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="tooltip" class="tooltip"></div>
+
+    <script>
+        // Puzzle data structure
+        const puzzle = {
+            size: 6,
+            revealed: [
+                [0, 0, 'sun'],
+                [0, 3, 'moon'],
+                [1, 2, 'moon'],
+                [2, 0, 'moon'],
+                [2, 5, 'sun'],
+                [3, 1, 'sun'],
+                [3, 4, 'moon'],
+                [4, 3, 'sun'],
+                [5, 5, 'sun']
+            ],
+            constraints: [
+                { type: 'horizontal', row: 0, col: 0, value: '=' },
+                { type: 'vertical', row: 1, col: 2, value: '×' },
+                { type: 'horizontal', row: 2, col: 2, value: '=' },
+                { type: 'vertical', row: 3, col: 5, value: '×' },
+                { type: 'horizontal', row: 5, col: 1, value: '=' },
+                { type: 'horizontal', row: 5, col: 4, value: '×' }
+            ]
+        };
+
+        // Game state
+        let gameState = {
+            grid: Array.from({ length: puzzle.size }, () => Array(puzzle.size).fill('empty')),
+            hintsUsed: 0,
+            moves: 0,
+            startTime: null,
+            elapsedTime: 0,
+            timerInterval: null,
+            isGameWon: false,
+            darkMode: false
+        };
+
+        // DOM elements
+        const timerElement = document.getElementById('timer');
+        const movesCounter = document.getElementById('moves-counter');
+        const hintsCounter = document.getElementById('hints-counter');
+        const progressCounter = document.getElementById('progress-counter');
+        const tooltip = document.getElementById('tooltip');
+
+        // Initialize the puzzle
+        function initializePuzzle() {
+            // Initialize grid state with revealed cells
+            for (const [r, c, symbol] of puzzle.revealed) {
+                gameState.grid[r][c] = symbol;
+            }
+
+            // Set up the grid layout
+            const gridContainer = document.getElementById('grid');
+            gridContainer.innerHTML = '';
+
+            let columns = '';
+            let rows = '';
+            for (let i = 0; i < puzzle.size; i++) {
+                columns += `var(--cell-size) `;
+                if (i < puzzle.size - 1) columns += `var(--constraint-size) `;
+                rows += `var(--cell-size) `;
+                if (i < puzzle.size - 1) rows += `var(--constraint-size) `;
+            }
+            gridContainer.style.gridTemplateColumns = columns.trim();
+            gridContainer.style.gridTemplateRows = rows.trim();
+
+            // Generate the grid cells and constraints
+            for (let r = 0; r < 2 * puzzle.size - 1; r++) {
+                for (let c = 0; c < 2 * puzzle.size - 1; c++) {
+                    const div = document.createElement('div');
+                    div.style.gridRow = r + 1;
+                    div.style.gridColumn = c + 1;
+
+                    if (r % 2 === 0 && c % 2 === 0) {
+                        // Grid cell
+                        const gridR = r / 2;
+                        const gridC = c / 2;
+                        
+                        div.classList.add('grid-cell');
+                        div.dataset.row = gridR;
+                        div.dataset.col = gridC;
+                        
+                        const revealed = puzzle.revealed.find(
+                            item => item[0] === gridR && item[1] === gridC
+                        );
+                        
+                        if (revealed) {
+                            div.textContent = revealed[2] === 'sun' ? '☀️' : '🌙';
+                            div.classList.add('revealed');
+                            div.dataset.state = revealed[2];
+                            
+                            // Add data attribute for tooltips
+                            div.dataset.tooltip = 'Fixed cell';
+                        } else {
+                            div.classList.add('interactive');
+                            div.dataset.state = 'empty';
+                            div.addEventListener('click', handleCellClick);
+                            
+                            // Add data attribute for tooltips
+                            div.dataset.tooltip = 'Click to place a sun or moon';
+                        }
+                        
+                        // Add mouseover/mouseout for tooltips
+                        div.addEventListener('mouseover', showTooltip);
+                        div.addEventListener('mouseout', hideTooltip);
+                    } else if (r % 2 === 0 && c % 2 === 1) {
+                        // Horizontal constraint
+                        const gridR = r / 2;
+                        const constraintC = (c - 1) / 2;
+                        const constraint = puzzle.constraints.find(
+                            item => item.type === 'horizontal' &&
+                                    item.row === gridR &&
+                                    item.col === constraintC
+                        );
+                        if (constraint) {
+                            div.textContent = constraint.value;
+                            div.classList.add('constraint', 'horizontal-constraint');
+                            div.dataset.type = 'horizontal';
+                            div.dataset.row = gridR;
+                            div.dataset.col = constraintC;
+                            
+                            // Add tooltip data
+                            if (constraint.value === '=') {
+                                div.dataset.tooltip = 'These cells must contain the same symbol';
+                            } else {
+                                div.dataset.tooltip = 'These cells must contain different symbols';
+                            }
+                            
+                            // Add mouseover/mouseout for tooltips
+                            div.addEventListener('mouseover', showTooltip);
+                            div.addEventListener('mouseout', hideTooltip);
+                        }
+                    } else if (r % 2 === 1 && c % 2 === 0) {
+                        // Vertical constraint
+                        const constraintR = (r - 1) / 2;
+                        const gridC = c / 2;
+                        const constraint = puzzle.constraints.find(
+                            item => item.type === 'vertical' &&
+                                    item.row === constraintR &&
+                                    item.col === gridC
+                        );
+                        if (constraint) {
+                            div.textContent = constraint.value;
+                            div.classList.add('constraint', 'vertical-constraint');
+                            div.dataset.type = 'vertical';
+                            div.dataset.row = constraintR;
+                            div.dataset.col = gridC;
+                            
+                            // Add tooltip data
+                            if (constraint.value === '=') {
+                                div.dataset.tooltip = 'These cells must contain the same symbol';
+                            } else {
+                                div.dataset.tooltip = 'These cells must contain different symbols';
+                            }
+                            
+                            // Add mouseover/mouseout for tooltips
+                            div.addEventListener('mouseover', showTooltip);
+                            div.addEventListener('mouseout', hideTooltip);
+                        }
+                    }
+                    gridContainer.appendChild(div);
+                }
+            }
+            
+            // Update UI counters
+            updateCounters();
+            
+            // Reset and start timer
+            resetTimer();
+            startTimer();
+        }
+
+        // Show tooltip on hover
+        function showTooltip(event) {
+            const element = event.currentTarget;
+            const tooltipText = element.dataset.tooltip;
+            
+            if (tooltipText) {
+                tooltip.textContent = tooltipText;
+                tooltip.style.opacity = '1';
+                
+                // Position the tooltip above the element
+                const rect = element.getBoundingClientRect();
+                tooltip.style.left = rect.left + (rect.width / 2) - (tooltip.offsetWidth / 2) + 'px';
+                tooltip.style.top = rect.top - tooltip.offsetHeight - 10 + 'px';
+            }
+        }
+
+        // Hide tooltip
+        function hideTooltip() {
+            tooltip.style.opacity = '0';
+        }
+
+        // Handle cell click to toggle between empty, sun, and moon
+        function handleCellClick(event) {
+            if (gameState.isGameWon) return;
+            
+            const cell = event.currentTarget;
+            const r = parseInt(cell.dataset.row);
+            const c = parseInt(cell.dataset.col);
+            
+            // Cycle through states: empty -> sun -> moon -> empty
+            let nextState;
+            if (cell.dataset.state === 'empty') {
+                nextState = 'sun';
+                cell.textContent = '☀️';
+                // Add brief animation
+                cell.classList.add('sun-animation');
+                setTimeout(() => cell.classList.remove('sun-animation'), 600);
+            } else if (cell.dataset.state === 'sun') {
+                nextState = 'moon';
+                cell.textContent = '🌙';
+                // Add brief animation
+                cell.classList.add('moon-animation');
+                setTimeout(() => cell.classList.remove('moon-animation'), 600);
+            } else {
+                nextState = 'empty';
+                cell.textContent = '';
+            }
+            
+            cell.dataset.state = nextState;
+            gameState.grid[r][c] = nextState;
+            gameState.moves++;
+            
+            // Update counters
+            updateCounters();
+            
+            // Update constraints
+            updateConstraints();
+            
+            // Check if solved automatically
+            if (isBoardFilled()) {
+                checkSolution(false);
+            }
+        }
+
+        // Update UI counters
+        function updateCounters() {
+            movesCounter.textContent = gameState.moves;
+            hintsCounter.textContent = gameState.hintsUsed;
+            
+            // Count filled cells
+            let filledCount = 0;
+            for (let r = 0; r < puzzle.size; r++) {
+                for (let c = 0; c < puzzle.size; c++) {
+                    if (gameState.grid[r][c] !== 'empty') {
+                        filledCount++;
+                    }
+                }
+            }
+            progressCounter.textContent = `${filledCount}/${puzzle.size * puzzle.size}`;
+        }
+
+        // Update constraints visual feedback
+        function updateConstraints() {
+            const constraints = document.querySelectorAll('.constraint');
+            constraints.forEach(constraint => {
+                const type = constraint.dataset.type;
+                const r = parseInt(constraint.dataset.row);
+                const c = parseInt(constraint.dataset.col);
+                
+                let cell1, cell2;
+                if (type === 'horizontal') {
+                    cell1 = gameState.grid[r][c];
+                    cell2 = gameState.grid[r][c + 1];
+                } else { // vertical
+                    cell1 = gameState.grid[r][c];
+                    cell2 = gameState.grid[r + 1][c];
+                }
+                
+                // Only show constraint status if both cells have values
+                if (cell1 !== 'empty' && cell2 !== 'empty') {
+                    const value = constraint.textContent;
+                    let isSatisfied;
+                    
+                    if (value === '=') {
+                        isSatisfied = cell1 === cell2;
+                    } else { // '×'
+                        isSatisfied = cell1 !== cell2;
+                    }
+                    
+                    constraint.classList.remove('satisfied', 'violated');
+                    constraint.classList.add(isSatisfied ? 'satisfied' : 'violated');
+                } else {
+                    constraint.classList.remove('satisfied', 'violated');
+                }
+            });
+        }
+
+        // Check if the board is filled completely
+        function isBoardFilled() {
+            return gameState.grid.every(row => !row.includes('empty'));
+        }
+
+        // Timer functions
+        function startTimer() {
+            if (!gameState.startTime) {
+                gameState.startTime = Date.now() - gameState.elapsedTime;
+            }
+            
+            gameState.timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        function updateTimer() {
+            const currentTime = Date.now();
+            gameState.elapsedTime = currentTime - gameState.startTime;
+            
+            const seconds = Math.floor(gameState.elapsedTime / 1000) % 60;
+            const minutes = Math.floor(gameState.elapsedTime / 1000 / 60);
+            
+            timerElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function stopTimer() {
+            clearInterval(gameState.timerInterval);
+        }
+
+        function resetTimer() {
+            stopTimer();
+            gameState.startTime = null;
+            gameState.elapsedTime = 0;
+            timerElement.textContent = '00:00';
+        }
+
+        // Show/hide modals
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // Confirm reset
+        function confirmReset() {
+            openModal('reset-modal');
+        }
+
+        // Reset the puzzle to the initial state
+        function resetPuzzle(closeModals = false) {
+            if (closeModals) {
+                closeModal('reset-modal');
+                closeModal('win-modal');
+            }
+            
+            gameState = {
+                grid: Array.from({ length: puzzle.size }, () => Array(puzzle.size).fill('empty')),
+                hintsUsed: 0,
+                moves: 0,
+                startTime: null,
+                elapsedTime: 0,
+                timerInterval: null,
+                isGameWon: false,
+                darkMode: gameState.darkMode
+            };
+            
+            // Reset revealed cells
+            for (const [r, c, symbol] of puzzle.revealed) {
+                gameState.grid[r][c] = symbol;
+            }
+            
+            // Update UI
+            document.querySelectorAll('.grid-cell.interactive').forEach(cell => {
+                cell.textContent = '';
+                cell.dataset.state = 'empty';
+                cell.classList.remove('sun-animation', 'moon-animation');
+            });
+            
+            document.querySelectorAll('.constraint').forEach(constraint => {
+                constraint.classList.remove('satisfied', 'violated');
+            });
+            
+            const statusMsg = document.getElementById('status-msg');
+            statusMsg.classList.remove('active', 'success', 'error', 'info');
+            
+            // Reset and restart timer
+            resetTimer();
+            startTimer();
+            
+            // Update counters
+            updateCounters();
+        }
+
+        // Show a hint
+        function showHint() {
+            if (gameState.isGameWon) return;
+            
+            if (isBoardFilled()) {
+                setStatusMessage('The board is already filled!', 'error');
+                return;
+            }
+            
+            // Find empty cells
+            const emptyCells = [];
+            for (let r = 0; r < puzzle.size; r++) {
+                for (let c = 0; c < puzzle.size; c++) {
+                    if (gameState.grid[r][c] === 'empty') {
+                        emptyCells.push([r, c]);
+                    }
+                }
+            }
+            
+            if (emptyCells.length === 0) return;
+            
+            // Choose a random empty cell
+            const [hintRow, hintCol] = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+            
+            // Determine the best value for the hint
+            const hintValue = calculateHintValue(hintRow, hintCol);
+            
+            // Update the cell
+            gameState.grid[hintRow][hintCol] = hintValue;
+            const cell = document.querySelector(`.grid-cell[data-row="${hintRow}"][data-col="${hintCol}"]`);
+            cell.textContent = hintValue === 'sun' ? '☀️' : '🌙';
+            cell.dataset.state = hintValue;
+            
+            // Add animation
+            cell.classList.add(hintValue === 'sun' ? 'sun-animation' : 'moon-animation');
+            setTimeout(() => {
+                cell.classList.remove('sun-animation', 'moon-animation');
+            }, 1000);
+            
+            // Update constraints
+            updateConstraints();
+            
+            // Increment hints used
+            gameState.hintsUsed++;
+            updateCounters();
+            
+            setStatusMessage(`Hint: Placed a ${hintValue === 'sun' ? 'sun' : 'moon'} at row ${hintRow + 1}, column ${hintCol + 1}`, 'info');
+        }
+
+        // Calculate the best value for a hint
+        function calculateHintValue(row, col) {
+            // Count suns and moons in the row and column
+            const currRow = gameState.grid[row];
+            const currCol = gameState.grid.map(r => r[col]);
+            
+            const rowSuns = currRow.filter(cell => cell === 'sun').length;
+            const colSuns = currCol.filter(cell => cell === 'sun').length;
+            
+            const rowMoons = currRow.filter(cell => cell === 'moon').length;
+            const colMoons = currCol.filter(cell => cell === 'moon').length;
+            
+            // Check if either is at max capacity
+            if (rowSuns >= puzzle.size / 2) return 'moon';
+            if (rowMoons >= puzzle.size / 2) return 'sun';
+            if (colSuns >= puzzle.size / 2) return 'moon';
+            if (colMoons >= puzzle.size / 2) return 'sun';
+            
+            // Check constraints
+            const horizontalLeftConstraint = puzzle.constraints.find(
+                c => c.type === 'horizontal' && c.row === row && c.col === col - 1
+            );
+            const horizontalRightConstraint = puzzle.constraints.find(
+                c => c.type === 'horizontal' && c.row === row && c.col === col
+            );
+            const verticalTopConstraint = puzzle.constraints.find(
+                c => c.type === 'vertical' && c.row === row - 1 && c.col === col
+            );
+            const verticalBottomConstraint = puzzle.constraints.find(
+                c => c.type === 'vertical' && c.row === row && c.col === col
+            );
+            
+            // Check for forced placements based on constraints
+            if (horizontalLeftConstraint) {
+                const leftCell = gameState.grid[row][col - 1];
+                if (leftCell !== 'empty') {
+                    if (horizontalLeftConstraint.value === '=') return leftCell;
+                    else return leftCell === 'sun' ? 'moon' : 'sun';
+                }
+            }
+            
+            if (horizontalRightConstraint) {
+                const rightCell = gameState.grid[row][col + 1];
+                if (rightCell !== 'empty') {
+                    if (horizontalRightConstraint.value === '=') return rightCell;
+                    else return rightCell === 'sun' ? 'moon' : 'sun';
+                }
+            }
+            
+            if (verticalTopConstraint) {
+                const topCell = gameState.grid[row - 1][col];
+                if (topCell !== 'empty') {
+                    if (verticalTopConstraint.value === '=') return topCell;
+                    else return topCell === 'sun' ? 'moon' : 'sun';
+                }
+            }
+            
+            if (verticalBottomConstraint) {
+                const bottomCell = gameState.grid[row + 1][col];
+                if (bottomCell !== 'empty') {
+                    if (verticalBottomConstraint.value === '=') return bottomCell;
+                    else return bottomCell === 'sun' ? 'moon' : 'sun';
+                }
+            }
+            
+            // Check for three-in-a-row prevention
+            if (row >= 2) {
+                if (gameState.grid[row-1][col] === gameState.grid[row-2][col] && gameState.grid[row-1][col] !== 'empty') {
+                    return gameState.grid[row-1][col] === 'sun' ? 'moon' : 'sun';
+                }
+            }
+            
+            if (row <= puzzle.size - 3) {
+                if (gameState.grid[row+1][col] === gameState.grid[row+2][col] && gameState.grid[row+1][col] !== 'empty') {
+                    return gameState.grid[row+1][col] === 'sun' ? 'moon' : 'sun';
+                }
+            }
+            
+            if (col >= 2) {
+                if (gameState.grid[row][col-1] === gameState.grid[row][col-2] && gameState.grid[row][col-1] !== 'empty') {
+                    return gameState.grid[row][col-1] === 'sun' ? 'moon' : 'sun';
+                }
+            }
+            
+            if (col <= puzzle.size - 3) {
+                if (gameState.grid[row][col+1] === gameState.grid[row][col+2] && gameState.grid[row][col+1] !== 'empty') {
+                    return gameState.grid[row][col+1] === 'sun' ? 'moon' : 'sun';
+                }
+            }
+            
+            // Choose the symbol that balances the row and column best
+            if (rowSuns <= rowMoons && colSuns <= colMoons) {
+                return 'sun';
+            } else {
+                return 'moon';
+            }
+        }
+
+        // Check the solution
+        function checkSolution(showAlert) {
+            if (gameState.isGameWon) return true;
+            
+            // Check for empty cells
+            if (!isBoardFilled()) {
+                if (showAlert) {
+                    setStatusMessage('Please fill all cells before checking the solution.', 'error');
+                }
+                return false;
+            }
+
+            // Check row and column balances (3 suns, 3 moons in 6x6 grid)
+            for (let i = 0; i < puzzle.size; i++) {
+                const row = gameState.grid[i];
+                const col = gameState.grid.map(row => row[i]);
+                const rowSuns = row.filter(x => x === 'sun').length;
+                const colSuns = col.filter(x => x === 'sun').length;
+                
+                if (rowSuns !== puzzle.size / 2) {
+                    if (showAlert) {
+                        setStatusMessage(`Row ${i + 1} has ${rowSuns} suns, but needs exactly ${puzzle.size / 2}.`, 'error');
+                    }
+                    return false;
+                }
+                if (colSuns !== puzzle.size / 2) {
+                    if (showAlert) {
+                        setStatusMessage(`Column ${i + 1} has ${colSuns} suns, but needs exactly ${puzzle.size / 2}.`, 'error');
+                    }
+                    return false;
+                }
+            }
+
+            // Check no three consecutive identical symbols
+            for (let i = 0; i < puzzle.size; i++) {
+                for (let j = 0; j < puzzle.size - 2; j++) {
+                    if (gameState.grid[i][j] === gameState.grid[i][j + 1] && 
+                        gameState.grid[i][j + 1] === gameState.grid[i][j + 2]) {
+                        if (showAlert) {
+                            setStatusMessage(`Row ${i + 1} has three identical symbols in a row.`, 'error');
+                        }
+                        return false;
+                    }
+                    if (gameState.grid[j][i] === gameState.grid[j + 1][i] && 
+                        gameState.grid[j + 1][i] === gameState.grid[j + 2][i]) {
+                        if (showAlert) {
+                            setStatusMessage(`Column ${i + 1} has three identical symbols in a row.`, 'error');
+                        }
+                        return false;
+                    }
+                }
+            }
+
+            // Check constraints
+            for (const con of puzzle.constraints) {
+                let cell1, cell2;
+                if (con.type === 'horizontal') {
+                    cell1 = gameState.grid[con.row][con.col];
+                    cell2 = gameState.grid[con.row][con.col + 1];
+                    
+                    if (con.value === '=' && cell1 !== cell2) {
+                        if (showAlert) {
+                            setStatusMessage(`Equality constraint not satisfied at row ${con.row + 1} between columns ${con.col + 1} and ${con.col + 2}.`, 'error');
+                        }
+                        return false;
+                    } else if (con.value === '×' && cell1 === cell2) {
+                        if (showAlert) {
+                            setStatusMessage(`Inequality constraint not satisfied at row ${con.row + 1} between columns ${con.col + 1} and ${con.col + 2}.`, 'error');
+                        }
+                        return false;
+                    }
+                } else {
+                    cell1 = gameState.grid[con.row][con.col];
+                    cell2 = gameState.grid[con.row + 1][con.col];
+                    
+                    if (con.value === '=' && cell1 !== cell2) {
+                        if (showAlert) {
+                            setStatusMessage(`Equality constraint not satisfied at column ${con.col + 1} between rows ${con.row + 1} and ${con.row + 2}.`, 'error');
+                        }
+                        return false;
+                    } else if (con.value === '×' && cell1 === cell2) {
+                        if (showAlert) {
+                            setStatusMessage(`Inequality constraint not satisfied at column ${con.col + 1} between rows ${con.row + 1} and ${con.row + 2}.`, 'error');
+                        }
+                        return false;
+                    }
+                }
+            }
+
+            // If we get here, the solution is correct
+            if (showAlert) {
+                celebrateWin();
+            }
+            return true;
+        }
+
+        // Celebrate winning the game
+        function celebrateWin() {
+            gameState.isGameWon = true;
+            stopTimer();
+            
+            // Update win stats
+            const time = timerElement.textContent;
+            document.getElementById('win-stats').innerHTML = `
+                <p>Time: ${time}</p>
+                <p>Moves: ${gameState.moves}</p>
+                <p>Hints: ${gameState.hintsUsed}</p>
+            `;
+            
+            // Show confetti effect
+            createConfetti();
+            
+            // Show win modal
+            setTimeout(() => {
+                openModal('win-modal');
+            }, 1000);
+        }
+
+        // Create confetti effect
+        function createConfetti() {
+            const colors = ['#4361ee', '#4cc9f0', '#f72585', '#7209b7', '#3a0ca3'];
+            const confettiCount = 150;
+            
+            for (let i = 0; i < confettiCount; i++) {
+                const confetti = document.createElement('div');
+                confetti.classList.add('confetti');
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.top = -10 + 'px';
+                confetti.style.width = Math.random() * 10 + 5 + 'px';
+                confetti.style.height = Math.random() * 10 + 5 + 'px';
+                confetti.style.opacity = Math.random() + 0.5;
+                confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+                
+                document.body.appendChild(confetti);
+                
+                // Animate falling
+                const animationDuration = Math.random() * 3 + 2;
+                const horizontalSwing = Math.random() * 50 - 25;
+                
+                confetti.animate([
+                    { transform: `translateY(0) translateX(0) rotate(0)`, opacity: 1 },
+                    { transform: `translateY(${window.innerHeight}px) translateX(${horizontalSwing}px) rotate(${Math.random() * 720}deg)`, opacity: 0 }
+                ], {
+                    duration: animationDuration * 1000,
+                    easing: 'cubic-bezier(0.215, 0.61, 0.355, 1)',
+                    fill: 'forwards'
+                });
+                
+                // Remove after animation
+                setTimeout(() => {
+                    confetti.remove();
+                }, animationDuration * 1000);
+            }
+        }
+
+        // Set status message
+        function setStatusMessage(message, type) {
+            const statusMsg = document.getElementById('status-msg');
+            statusMsg.textContent = message;
+            statusMsg.className = 'status';
+            statusMsg.classList.add(type);
+            
+            // Animate in
+            setTimeout(() => {
+                statusMsg.classList.add('active');
+            }, 10);
+            
+            // Auto hide after 5 seconds for error messages
+            if (type === 'error' || type === 'info') {
+                setTimeout(() => {
+                    statusMsg.classList.remove('active');
+                }, 5000);
+            }
+        }
+
+        // Toggle dark mode
+        function toggleDarkMode() {
+            const body = document.body;
+            const modeToggle = document.querySelector('.mode-toggle i');
+            
+            body.classList.toggle('dark-mode');
+            gameState.darkMode = body.classList.contains('dark-mode');
+            
+            if (gameState.darkMode) {
+                modeToggle.className = 'fas fa-sun';
+            } else {
+                modeToggle.className = 'fas fa-moon';
+            }
+        }
+
+        // Initialize the puzzle when the page loads
+        window.onload = initializePuzzle;
+    </script>
+</body>
+</html>
