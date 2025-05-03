@@ -883,8 +883,12 @@
             hard: []
         };
         
-        // Current puzzle reference
-        let puzzle = null;
+        // Current puzzle reference - Initialize with a default structure rather than null
+        let puzzle = {
+            size: 6,  // Default size
+            revealed: [],
+            constraints: []
+        };
         
         // Current puzzle difficulty and index
         let currentDifficulty = 'medium';
@@ -1016,9 +1020,9 @@
             ]
         };
 
-        // Game state
+        // Game state - Initialize with empty grid first, will be properly set up later
         let gameState = {
-            grid: Array.from({ length: puzzle.size }, () => Array(puzzle.size).fill('empty')),
+            grid: [],  // Initialize as empty array first
             hintsUsed: 0,
             moves: 0,
             startTime: null,
@@ -1028,12 +1032,12 @@
             darkMode: false
         };
 
-        // DOM elements
-        const timerElement = document.getElementById('timer');
-        const movesCounter = document.getElementById('moves-counter');
-        const hintsCounter = document.getElementById('hints-counter');
-        const progressCounter = document.getElementById('progress-counter');
-        const tooltip = document.getElementById('tooltip');
+        // DOM elements - These will be initialized after the DOM is loaded
+        let timerElement;
+        let movesCounter;
+        let hintsCounter;
+        let progressCounter;
+        let tooltip;
 
         // Initialize the puzzle
         function initializePuzzle() {
@@ -1948,7 +1952,7 @@
             setStatusMessage(`Loaded ${difficulty} puzzle #${index + 1}`, "info");
         }
         
-        // Reset the puzzle with new puzzle data
+        // Reset the puzzle with new puzzle data - FIXED
         function resetPuzzleWithNewData(newPuzzle) {
             // Stop the current timer
             stopTimer();
@@ -1956,7 +1960,7 @@
             // Update the puzzle data
             puzzle = newPuzzle;
             
-            // Reset game state
+            // Reset game state with the proper grid size based on the new puzzle
             gameState = {
                 grid: Array.from({ length: puzzle.size }, () => Array(puzzle.size).fill('empty')),
                 hintsUsed: 0,
@@ -1974,7 +1978,7 @@
             }
             
             // Update UI
-            initializeGrid();
+            initializePuzzle();
             updateCounters();
             
             // Reset and start timer
@@ -2036,11 +2040,18 @@
             document.getElementById('loading-overlay').classList.remove('active');
         }
         
-        // Initialize the application when the page loads
+        // Initialize the application when the page loads - FIXED
         window.onload = function() {
-            // Initialize game state to prevent errors
+            // Initialize DOM elements
+            timerElement = document.getElementById('timer');
+            movesCounter = document.getElementById('moves-counter');
+            hintsCounter = document.getElementById('hints-counter');
+            progressCounter = document.getElementById('progress-counter');
+            tooltip = document.getElementById('tooltip');
+            
+            // Initialize game state safely without depending on puzzle.size
             gameState = {
-                grid: [],
+                grid: [],  // Empty grid initially
                 hintsUsed: 0,
                 moves: 0,
                 startTime: null,
