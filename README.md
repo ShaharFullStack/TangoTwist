@@ -1,6 +1,6 @@
 # TangoTwist - Sun and Moon Puzzle Game
 
-![TangoTwist Banner](https://api.placeholder.com/400/320)
+![TangoTwist Banner](bannerSmall.png)
 
 TangoTwist is an elegant browser-based logic puzzle game featuring suns and moons in a cosmic dance. Balance light and dark as you solve challenging puzzles using logical deduction.
 
@@ -101,6 +101,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📬 Contact
 
 - GitHub: [@ShaharFullStack](https://github.com/ShaharFullStack)
+### Shahar Maoz
 
 ---
 

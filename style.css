@@ -51,16 +51,7 @@ body {
     margin-bottom: 15px;
     width: 100%;
 }
-#solution-btn {
-    background-color: #6c757d;
-    color: white;
-    border: none;
-}
 
-#solution-btn:hover {
-    background-color: #5a6268;
-    color: white;
-}
 .difficulty-btn {
     flex: 1;
     padding: 8px 5px;
